@@ -9,7 +9,7 @@ import random
 import os
 from datasets import load_dataset
 from transformers import AutoTokenizer
-from utils import GPT2
+from utils import GPT2,GenerateCallback
 import argparse
 
 def parse_args():
@@ -34,10 +34,10 @@ if __name__ == '__main__':
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     tokenizer.pad_token = tokenizer.eos_token
-
+    tokenizer.add_special_tokens({"bos_token": "<bos>"})
     def transform(example):
-        return tokenizer(text=example['text'],truncation=True,padding=True,max_length=512,return_tensors='pt')
-
+        text = [tokenizer.bos_token + " " + text  + " " + tokenizer.eos_token for text in example['text']]
+        return tokenizer(text=text, truncation=True, padding=True, max_length=512, return_tensors='pt')
     ds = dataset.with_transform(transform)
 
     train_loader = DataLoader(ds['train'],batch_size=args.batch_size,num_workers=4,shuffle=True)
@@ -55,13 +55,14 @@ if __name__ == '__main__':
     model = GPT2(n_embed=n_embed,block_size=block_size,vocab_size=vocab_size,n_heads=n_heads,n_layers=n_layers,lr=lr,t_max=num_epochs*len(train_loader))
     if args.compile:
         torch.compile(model)
-    callback = L.pytorch.callbacks.ModelCheckpoint(save_top_k=1,mode='max',monitor='validation_loss',save_last=True)
+    log_callback = L.pytorch.callbacks.ModelCheckpoint(save_top_k=1,mode='max',monitor='validation_loss',save_last=True)
+    generate_callback = GenerateCallback(tokenizer=tokenizer)
     trainer = L.Trainer(
         accelerator='gpu',
         devices=-1,
         strategy='ddp',
         max_epochs=num_epochs,
-        callbacks=[callback],
+        callbacks=[log_callback,generate_callback],
         precision='16-mixed',
     )
 

@@ -10,7 +10,6 @@ import os
 
 # os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
-
 class SwiGLU(nn.Module):
     def __init__(self, n_embed):
         super().__init__()
@@ -88,18 +87,42 @@ class TransformerDecoder(nn.Module):
         x = self.ln_f(x)
         logits = self.lm_head(x)  # B,T,vocab_size
         return logits
-
+    
+    @torch.inference_mode()
+    def generate(self,tokenizer,text,max_tokens,temperature=0.0):
+        self.eval()
+        if text==None:
+            text=tokenizer.bos_token
+        idxs = tokenizer(text=text,return_tensors='pt')['input_ids']
+        for _ in range(max_tokens):
+            idxs = idxs[:,-512:]
+            logits = model(idxs)[:,-1,:]
+            if temperature == 0.0:
+                _, next_token = torch.topk(logits, k=1, dim=-1)
+            else:
+                logits = logits / temperature
+                probs = F.softmax(logits, dim=-1)
+                next_token = torch.multinomial(probs, num_samples=1)
+            idxs = torch.cat((idxs, next_token), dim=1)
+        self.train()
+        return tokenizer.decode(idxs[0])
+            
+            
 class GPT2(L.LightningModule):
     def __init__(self, n_embed, n_heads, n_layers, vocab_size, block_size, lr, t_max, dropout=0.2):
         super().__init__()
         self.model = TransformerDecoder(n_embed, n_heads, n_layers, vocab_size, block_size, dropout)
         self.lr = lr
         self.t_max = t_max
-    def forward(self, x,training):
-        return self.model(x,training)
-
+    def forward(self, x):
+        return self.model(x)
+    
+    @torch.inference_mode()
+    def generate(self,tokenizer,text,max_tokens,temperature=0.0):
+        return self.model.generate(tokenizer,text,max_tokens,temperature)
+    
     def training_step(self, batch, batch_idx):
-        logits = self(batch['input_ids'],training=True)
+        logits = self(batch['input_ids'])
         targets = batch['input_ids'][..., 1:].contiguous()
         logits = logits[:, :-1, :].contiguous()
         loss = F.cross_entropy(logits.view(-1, logits.shape[-1]), targets.view(-1))
@@ -107,7 +130,7 @@ class GPT2(L.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        logits = self(batch['input_ids'],training=False)
+        logits = self(batch['input_ids'])
         targets = batch['input_ids'][..., 1:].contiguous()
         logits = logits[:, :-1, :].contiguous()
         loss = F.cross_entropy(logits.view(-1, logits.shape[-1]), targets.view(-1))
@@ -125,3 +148,11 @@ class GPT2(L.LightningModule):
                 "frequency": 1,
             }
         }
+
+class GenerateCallback(L.pytorch.callbacks.Callback):
+    def __init__(self,tokenizer):
+        super().__init__()
+        self.tokenizer = tokenizer
+    def on_epoch_end(self, trainer, pl_module):
+        generated_text = pl_module.generate(self.tokenizer,max_tokens=256,temperature=1.0)
+        print("Generated text:", generated_text)
