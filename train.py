@@ -31,7 +31,7 @@ if __name__ == '__main__':
     block_size = 512
     lr = 3e-4
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    n_embed = 600
+    n_embed = 300
     n_heads = 12
     n_layer = 4
     dropout = 0.2
@@ -45,7 +45,7 @@ if __name__ == '__main__':
         strategy='ddp',
         max_epochs=num_epochs,
         callbacks = [callback],
-        precision='16',
+        precision='16-mixed',
     )
 
     trainer.fit(

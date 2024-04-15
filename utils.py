@@ -95,8 +95,8 @@ class GPT2(L.LightningModule):
         self.model = TransformerDecoder(n_embed, n_heads, n_layers, vocab_size, block_size, dropout)
         self.lr = lr
         self.t_max = t_max
-    def forward(self, x):
-        return self.model(x)
+    def forward(self, x,training):
+        return self.model(x,training)
 
     def training_step(self, batch, batch_idx):
         logits = self(batch['input_ids'],training=True)
