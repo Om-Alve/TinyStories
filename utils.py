@@ -96,7 +96,7 @@ class TransformerDecoder(nn.Module):
         idxs = tokenizer(text=text,return_tensors='pt')['input_ids']
         for _ in range(max_tokens):
             idxs = idxs[:,-512:]
-            logits = model(idxs)[:,-1,:]
+            logits = self(idxs)[:,-1,:]
             if temperature == 0.0:
                 _, next_token = torch.topk(logits, k=1, dim=-1)
             else:
