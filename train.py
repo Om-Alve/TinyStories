@@ -67,6 +67,7 @@ if __name__ == '__main__':
         callbacks=callbacks,
         precision='16-mixed',
         fast_dev_run= True if args.dev_run else False,
+        accumulate_grad_batches=6,
     )
 
     trainer.fit(
