@@ -89,9 +89,9 @@ class TransformerDecoder(nn.Module):
         return logits
     
     @torch.inference_mode()
-    def generate(self,tokenizer,text,max_tokens,temperature=0.0):
+    def generate(self,tokenizer,max_tokens,text="",temperature=0.0):
         self.eval()
-        if text==None:
+        if text=="":
             text=tokenizer.bos_token
         idxs = tokenizer(text=text,return_tensors='pt')['input_ids']
         for _ in range(max_tokens):
@@ -105,7 +105,7 @@ class TransformerDecoder(nn.Module):
                 next_token = torch.multinomial(probs, num_samples=1)
             idxs = torch.cat((idxs, next_token), dim=1)
         self.train()
-        return tokenizer.decode(idxs[0])
+        return tokenizer.decode(token_ids=idxs[0])
             
             
 class GPT2(L.LightningModule):
@@ -118,8 +118,8 @@ class GPT2(L.LightningModule):
         return self.model(x)
     
     @torch.inference_mode()
-    def generate(self,tokenizer,text,max_tokens,temperature=0.0):
-        return self.model.generate(tokenizer,text,max_tokens,temperature)
+    def generate(self,tokenizer,max_tokens,text="",temperature=0.0):
+        return self.model.generate(tokenizer=tokenizer,text=text,max_tokens=max_tokens,temperature=temperature)
     
     def training_step(self, batch, batch_idx):
         logits = self(batch['input_ids'])
@@ -154,5 +154,5 @@ class GenerateCallback(L.pytorch.callbacks.Callback):
         super().__init__()
         self.tokenizer = tokenizer
     def on_epoch_end(self, trainer, pl_module):
-        generated_text = pl_module.generate(self.tokenizer,max_tokens=256,temperature=1.0)
+        generated_text = pl_module.generate(tokenizer=self.tokenizer,max_tokens=256,temperature=1.0)
         print("Generated text:", generated_text)

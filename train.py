@@ -44,7 +44,7 @@ if __name__ == '__main__':
     train_loader = DataLoader(ds['train'],batch_size=args.batch_size,num_workers=4,shuffle=True)
     val_loader = DataLoader(ds['validation'],batch_size=args.batch_size,num_workers=4)
 
-    vocab_size = tokenizer.vocab_size
+    vocab_size = tokenizer.vocab_size + 1
     block_size = 512
     lr = args.lr
     n_embed = args.n_embed
@@ -58,12 +58,13 @@ if __name__ == '__main__':
         torch.compile(model)
     log_callback = L.pytorch.callbacks.ModelCheckpoint(save_top_k=1,mode='max',monitor='validation_loss',save_last=True)
     generate_callback = GenerateCallback(tokenizer=tokenizer)
+    callbacks = [log_callback,generate_callback]
     trainer = L.Trainer(
         accelerator='gpu',
         devices=-1,
         strategy='ddp',
         max_epochs=num_epochs,
-        callbacks=[log_callback],
+        callbacks=callbacks,
         precision='16-mixed',
         fast_dev_run= True if args.dev_run else False,
     )
