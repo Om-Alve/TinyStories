@@ -23,7 +23,7 @@ def parse_args():
     parser.add_argument("--n_layers", type=int, default=4, help="Number of layers")
     parser.add_argument("--dropout", type=float, default=0.2, help="Dropout rate")
     parser.add_argument("--num_epochs", type=int, default=5, help="Number of epochs")
-    parser.add_argument("--compile", action="store_true", help="Compile the model")
+    parser.add_argument("--generate", action="store_true")
     parser.add_argument("--test_run",action="store_true")
     parser.add_argument("--dev_run",action="store_true")
     return parser.parse_args()
@@ -74,3 +74,6 @@ if __name__ == '__main__':
         train_dataloaders=train_loader if not args.test_run else val_loader,
         val_dataloaders=val_loader,
     )
+    
+    if args.generate:
+        print(model.generate(tokenizer=tokenizer,max_tokens=256,temperature=1.0))
