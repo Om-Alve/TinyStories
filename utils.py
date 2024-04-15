@@ -30,22 +30,17 @@ class Head(nn.Module):
         self.key = nn.Linear(n_embed, head_size, bias=False)
         self.query = nn.Linear(n_embed, head_size, bias=False)
         self.value = nn.Linear(n_embed, head_size, bias=False)
-        self.register_buffer('tril', torch.tril(torch.ones(block_size, block_size)))
-        self.dropout = nn.Dropout(dropout)
+        self.dropout = dropout
 
-    def forward(self, x):
+    def forward(self,x,training):
         # x : (B,T,n_embed)
-        B, T, C = x.shape
-        k = self.key(x)
+        B,T,C = x.shape
+        k = self.key(x)  
         q = self.query(x)
-        w = q @ k.transpose(-2, -1) / (C ** 0.5)  # (B,T,T)
-        w = w.masked_fill(self.tril[:T, :T] == 0, float('-inf'))
-        w = F.softmax(w, dim=-1)
-        w = self.dropout(w)
         v = self.value(x)
-        out = w @ v
+        out = torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=None, dropout_p=self.dropout if training else 0.0, is_causal=True) 
         return out
-
+    
 class MultiHeadAttention(nn.Module):
     def __init__(self, num_heads, head_size, n_embed, block_size, dropout):
         super().__init__()
@@ -53,8 +48,8 @@ class MultiHeadAttention(nn.Module):
         self.proj = nn.Linear(n_embed, n_embed)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, X):
-        out = torch.cat([head(X) for head in self.heads], dim=-1)
+    def forward(self, X,training):
+        out = torch.cat([head(X,training) for head in self.heads], dim=-1)
         out = self.proj(out)
         return self.dropout(out)
 
@@ -66,9 +61,9 @@ class Block(nn.Module):
         self.ln1 = nn.LayerNorm(n_embed)
         self.ln2 = nn.LayerNorm(n_embed)
 
-    def forward(self, x):
+    def forward(self, x,training):
         x = self.ln1(x)
-        x = x + self.sa_heads(x)
+        x = x + self.sa_heads(x,training)
         x = self.ln2(x)
         x = x + self.ffwd(x)
         return x
@@ -78,17 +73,18 @@ class TransformerDecoder(nn.Module):
         super().__init__()
         self.embedding_table = nn.Embedding(vocab_size, n_embed)
         self.positon_embedding = nn.Embedding(block_size, n_embed)
-        self.blocks = nn.Sequential(*[Block(n_embed, n_heads, block_size, dropout) for _ in range(n_layers)])
+        self.blocks = nn.ModuleList([Block(n_embed, n_heads, block_size, dropout) for _ in range(n_layers)])
         self.ln_f = nn.LayerNorm(n_embed)
         self.lm_head = nn.Linear(n_embed, vocab_size)
 
-    def forward(self, x):
+    def forward(self, x,training=False):
         # x : (B,T)
         B, T = x.shape
         tok_emb = self.embedding_table(x)  # B,T,n_embed
         pos_emb = self.positon_embedding(torch.arange(T, device=x.device))  # T,n_embed
         x = tok_emb + pos_emb  # B,T,n_embed
-        x = self.blocks(x)
+        for block in self.blocks:
+            x = block(x,training)
         x = self.ln_f(x)
         logits = self.lm_head(x)  # B,T,vocab_size
         return logits
@@ -103,7 +99,7 @@ class GPT2(L.LightningModule):
         return self.model(x)
 
     def training_step(self, batch, batch_idx):
-        logits = self(batch['input_ids'])
+        logits = self(batch['input_ids'],training=True)
         targets = batch['input_ids'][..., 1:].contiguous()
         logits = logits[:, :-1, :].contiguous()
         loss = F.cross_entropy(logits.view(-1, logits.shape[-1]), targets.view(-1))
@@ -111,7 +107,7 @@ class GPT2(L.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        logits = self(batch['input_ids'])
+        logits = self(batch['input_ids'],training=False)
         targets = batch['input_ids'][..., 1:].contiguous()
         logits = logits[:, :-1, :].contiguous()
         loss = F.cross_entropy(logits.view(-1, logits.shape[-1]), targets.view(-1))
