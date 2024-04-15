@@ -131,7 +131,7 @@ class GPT2(L.LightningModule):
         logits = self(batch['input_ids'])
         targets = batch['input_ids'][..., 1:].contiguous()
         logits = logits[:, :-1, :].contiguous()
-        loss = F.cross_entropy(logits.view(-1, logits.shape[-1]), targets.view(-1))
+        loss = F.cross_entropy(logits.view(-1, logits.shape[-1]), targets.view(-1),ignore_index=50256)
         self.log('training_loss', loss, prog_bar=True, on_step=True, on_epoch=False, sync_dist=True)
         return loss
 
@@ -139,7 +139,7 @@ class GPT2(L.LightningModule):
         logits = self(batch['input_ids'])
         targets = batch['input_ids'][..., 1:].contiguous()
         logits = logits[:, :-1, :].contiguous()
-        loss = F.cross_entropy(logits.view(-1, logits.shape[-1]), targets.view(-1))
+        loss = F.cross_entropy(logits.view(-1, logits.shape[-1]), targets.view(-1),ignore_index=50256)
         self.log('validation_loss', loss, prog_bar=True, on_step=False, on_epoch=True, sync_dist=True)
 
     def configure_optimizers(self):
