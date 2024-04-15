@@ -63,7 +63,7 @@ if __name__ == '__main__':
         devices=-1,
         strategy='ddp',
         max_epochs=num_epochs,
-        callbacks=[log_callback,generate_callback],
+        callbacks=[log_callback],
         precision='16-mixed',
         fast_dev_run= True if args.dev_run else False,
     )
