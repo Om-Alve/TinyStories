@@ -111,6 +111,12 @@ class TransformerDecoder(nn.Module):
 class GPT2(L.LightningModule):
     def __init__(self, n_embed, n_heads, n_layers, vocab_size, block_size, lr, t_max, dropout=0.2):
         super().__init__()
+        self.n_embed = n_embed
+        self.n_heads = n_heads
+        self.vocab_size = vocab_size
+        self.block_size = block_size
+        self.dropout = dropout
+        self.n_layers = n_layers
         self.model = TransformerDecoder(n_embed, n_heads, n_layers, vocab_size, block_size, dropout)
         self.lr = lr
         self.t_max = t_max
@@ -149,7 +155,7 @@ class GPT2(L.LightningModule):
             }
         }
 
-class GenerateCallback(L.pytorch.callbacks.Callback):
+class GenerateCallback(L.callbacks.Callback):
     def __init__(self,tokenizer):
         super().__init__()
         self.tokenizer = tokenizer
