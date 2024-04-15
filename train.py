@@ -23,6 +23,7 @@ def parse_args():
     parser.add_argument("--n_layers", type=int, default=4, help="Number of layers")
     parser.add_argument("--dropout", type=float, default=0.2, help="Dropout rate")
     parser.add_argument("--num_epochs", type=int, default=5, help="Number of epochs")
+    parser.add_argument("--compile",type=bool,default=False,help="Compile the model")
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -51,7 +52,8 @@ if __name__ == '__main__':
     num_epochs = args.num_epochs
 
     model = GPT2(n_embed=n_embed,block_size=block_size,vocab_size=vocab_size,n_heads=n_heads,n_layers=n_layers,lr=lr,t_max=num_epochs*len(train_loader))
-
+    if args.compile:
+        torch.compile(model)
     callback = L.pytorch.callbacks.ModelCheckpoint(save_top_k=1,mode='max',monitor='validation_loss',save_last=True)
     trainer = L.Trainer(
         accelerator='gpu',
