@@ -53,7 +53,7 @@ if __name__ == '__main__':
     dropout = args.dropout
     num_epochs = args.num_epochs
 
-    model = GPT2(n_embed=n_embed,block_size=block_size,vocab_size=vocab_size,n_heads=n_heads,n_layers=n_layers,lr=lr,t_max=num_epochs*len(train_loader))
+    model = GPT2(n_embed=n_embed,block_size=block_size,vocab_size=vocab_size,n_heads=n_heads,n_layers=n_layers,lr=lr,t_max=num_epochs*len(val_loader if args.test_run else train_loader))
 
     log_callback = L.pytorch.callbacks.ModelCheckpoint(save_top_k=1,mode='max',monitor='validation_loss',save_last=True)
     generate_callback = GenerateCallback(tokenizer=tokenizer)
