@@ -18,6 +18,7 @@ def parse_args():
     parser.add_argument("--model_name", type=str, default="roneneldan/TinyStories", help="Name of the pretrained model to use")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training")
     parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
+    parser.add_argument('--block_size',type=int,default=512,help="Block size")
     parser.add_argument("--n_embed", type=int, default=300, help="Embedding size")
     parser.add_argument("--n_heads", type=int, default=12, help="Number of attention heads")
     parser.add_argument("--n_layers", type=int, default=4, help="Number of layers")
@@ -45,7 +46,7 @@ if __name__ == '__main__':
     val_loader = DataLoader(ds['validation'],batch_size=args.batch_size,num_workers=4)
 
     vocab_size = tokenizer.vocab_size + 1
-    block_size = 512
+    block_size = args.block_size
     lr = args.lr
     n_embed = args.n_embed
     n_heads = args.n_heads
