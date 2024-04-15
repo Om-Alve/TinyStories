@@ -155,7 +155,7 @@ class GPT2(L.LightningModule):
             }
         }
 
-class GenerateCallback(L.callbacks.Callback):
+class GenerateCallback(L.pytorch.callbacks.Callback):
     def __init__(self,tokenizer):
         super().__init__()
         self.tokenizer = tokenizer
