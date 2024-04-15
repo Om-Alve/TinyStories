@@ -25,6 +25,7 @@ def parse_args():
     parser.add_argument("--num_epochs", type=int, default=5, help="Number of epochs")
     parser.add_argument("--compile", action="store_true", help="Compile the model")
     parser.add_argument("--test_run",action="store_true")
+    parser.add_argument("--dev_run",action="store_true")
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -64,6 +65,7 @@ if __name__ == '__main__':
         max_epochs=num_epochs,
         callbacks=[log_callback,generate_callback],
         precision='16-mixed',
+        fast_dev_run= True if args.dev_run else False,
     )
 
     trainer.fit(
