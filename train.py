@@ -23,7 +23,7 @@ def parse_args():
     parser.add_argument("--n_layers", type=int, default=4, help="Number of layers")
     parser.add_argument("--dropout", type=float, default=0.2, help="Dropout rate")
     parser.add_argument("--num_epochs", type=int, default=5, help="Number of epochs")
-    parser.add_argument("--compile",type=bool,default=False,help="Compile the model")
+    parser.add_argument("--compile", action="store_true", help="Compile the model")
     return parser.parse_args()
 
 if __name__ == '__main__':
