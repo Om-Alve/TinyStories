@@ -27,6 +27,7 @@ def parse_args():
     parser.add_argument("--generate", action="store_true")
     parser.add_argument("--test_run",action="store_true")
     parser.add_argument("--dev_run",action="store_true")
+    parser.add_argument("--gradient_accumulation",type=int,default=6,help="Number of batches for Gradient Accumulation")
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -67,6 +68,7 @@ if __name__ == '__main__':
         callbacks=callbacks,
         precision='16-mixed',
         fast_dev_run= True if args.dev_run else False,
+        accumulate_grad_batches=args.gradient_accumulation,
     )
 
     trainer.fit(
