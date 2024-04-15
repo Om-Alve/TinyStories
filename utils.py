@@ -26,7 +26,7 @@ class SwiGLU(nn.Module):
         return out
 
 class Head(nn.Module):
-    def __init__(self, head_size, n_embed, block_size, dropout):
+    def __init__(self, head_size, n_embed, dropout):
         super().__init__()
         self.key = nn.Linear(n_embed, head_size, bias=False)
         self.query = nn.Linear(n_embed, head_size, bias=False)
@@ -45,9 +45,9 @@ class Head(nn.Module):
         return out
     
 class MultiHeadAttention(nn.Module):
-    def __init__(self, num_heads, head_size, n_embed, block_size, dropout):
+    def __init__(self, num_heads, head_size, n_embed, dropout):
         super().__init__()
-        self.heads = nn.ModuleList([Head(head_size, n_embed, block_size, dropout) for _ in range(num_heads)])
+        self.heads = nn.ModuleList([Head(head_size, n_embed, dropout) for _ in range(num_heads)])
         self.proj = nn.Linear(n_embed, n_embed)
         self.dropout = nn.Dropout(dropout)
 
@@ -57,9 +57,9 @@ class MultiHeadAttention(nn.Module):
         return self.dropout(out)
 
 class Block(nn.Module):
-    def __init__(self, n_embed, n_heads, block_size, dropout):
+    def __init__(self, n_embed, n_heads, dropout):
         super().__init__()
-        self.sa_heads = MultiHeadAttention(n_heads, n_embed // n_heads, n_embed, block_size, dropout)
+        self.sa_heads = MultiHeadAttention(n_heads, n_embed // n_heads, n_embed, dropout)
         self.ffwd = SwiGLU(n_embed)
         self.ln1 = nn.LayerNorm(n_embed)
         self.ln2 = nn.LayerNorm(n_embed)
@@ -76,7 +76,7 @@ class TransformerDecoder(nn.Module):
         super().__init__()
         self.embedding_table = nn.Embedding(vocab_size, n_embed)
         self.positon_embedding = nn.Embedding(block_size, n_embed)
-        self.blocks = nn.ModuleList([Block(n_embed, n_heads, block_size, dropout) for _ in range(n_layers)])
+        self.blocks = nn.ModuleList([Block(n_embed, n_heads, dropout) for _ in range(n_layers)])
         self.ln_f = nn.LayerNorm(n_embed)
         self.lm_head = nn.Linear(n_embed, vocab_size)
 

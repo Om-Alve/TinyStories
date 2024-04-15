@@ -39,7 +39,7 @@ if __name__ == '__main__':
     tokenizer.add_special_tokens({"bos_token": "<bos>"})
     def transform(example):
         text = [tokenizer.bos_token + " " + text  + " " + tokenizer.eos_token for text in example['text']]
-        return tokenizer(text=text, truncation=True, padding=True, max_length=512, return_tensors='pt')
+        return tokenizer(text=text, truncation=True, padding=True, max_length=args.block_size, return_tensors='pt')
     ds = dataset.with_transform(transform)
 
     train_loader = DataLoader(ds['train'],batch_size=args.batch_size,num_workers=4,shuffle=True)
