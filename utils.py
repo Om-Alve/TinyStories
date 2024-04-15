@@ -18,7 +18,9 @@ class SwiGLU(nn.Module):
         self.v = nn.Linear(n_embed, n_embed * hidden_size, bias=False)
         self.w2 = nn.Linear(n_embed * hidden_size, n_embed, bias=False)
         self.dropout = nn.Dropout(0.2)
-
+        nn.init.xavier_uniform_(self.w.weight)
+        nn.init.xavier_uniform_(self.v.weight)
+        nn.init.xavier_uniform_(self.w2.weight)
     def forward(self, x):
         out = self.dropout(self.w2(F.silu(self.w(x)) * self.v(x)))
         return out
@@ -30,7 +32,9 @@ class Head(nn.Module):
         self.query = nn.Linear(n_embed, head_size, bias=False)
         self.value = nn.Linear(n_embed, head_size, bias=False)
         self.dropout = dropout
-
+        nn.init.xavier_uniform_(self.key.weight)
+        nn.init.xavier_uniform_(self.query.weight)
+        nn.init.xavier_uniform_(self.value.weight)
     def forward(self,x,training):
         # x : (B,T,n_embed)
         B,T,C = x.shape
