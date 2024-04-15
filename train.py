@@ -24,6 +24,7 @@ def parse_args():
     parser.add_argument("--dropout", type=float, default=0.2, help="Dropout rate")
     parser.add_argument("--num_epochs", type=int, default=5, help="Number of epochs")
     parser.add_argument("--compile", action="store_true", help="Compile the model")
+    parser.add_argument("--test_run",action="store_true")
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -66,6 +67,6 @@ if __name__ == '__main__':
 
     trainer.fit(
         model=model,
-        train_dataloaders=train_loader,
+        train_dataloaders=train_loader if not args.test_run else val_loader,
         val_dataloaders=val_loader,
     )
