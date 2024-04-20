@@ -4,24 +4,19 @@ import lightning as L
 import torch.nn.functional as F
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
-import torchmetrics
-import random
-import os
 from typing import Dict, Any
+from dataclasses import dataclass
 
-# os.environ["TOKENIZERS_PARALLELISM"] = "false"
-import torch
-import torch.nn as nn
-import lightning as L
-import torch.nn.functional as F
-import numpy as np
-from torch.utils.data import Dataset, DataLoader
-import torchmetrics
-import random
-import os
-from typing import Dict, Any
-
-# os.environ["TOKENIZERS_PARALLELISM"] = "false"
+@dataclass
+class GPT2Config:
+    vocab_size :int
+    n_embed :int
+    block_size :int
+    n_heads :int
+    n_layers :int
+    dropout :float
+    lr :float
+    t_max :int    
 
 class SwiGLU(nn.Module):
     def __init__(self, n_embed: int):
@@ -83,13 +78,13 @@ class Block(nn.Module):
         return x + self.ffwd(x)
 
 class TransformerDecoder(nn.Module):
-    def __init__(self, n_embed: int, n_heads: int, n_layers: int, vocab_size: int, block_size: int, dropout: float = 0.2):
+    def __init__(self, config :GPT2Config):
         super().__init__()
-        self.embedding_table = nn.Embedding(vocab_size, n_embed)
-        self.positon_embedding = nn.Embedding(block_size, n_embed)
-        self.blocks = nn.ModuleList([Block(n_embed, n_heads, dropout) for _ in range(n_layers)])
-        self.ln_f = nn.LayerNorm(n_embed)
-        self.lm_head = nn.Linear(n_embed, vocab_size)
+        self.embedding_table = nn.Embedding(config.vocab_size, config.n_embed)
+        self.positon_embedding = nn.Embedding(config.block_size, config.n_embed)
+        self.blocks = nn.ModuleList([Block(config.n_embed, config.n_heads, config.dropout) for _ in range(config.n_layers)])
+        self.ln_f = nn.LayerNorm(config.n_embed)
+        self.lm_head = nn.Linear(config.n_embed, config.vocab_size)
         # Weight Tying
         self.embedding_table.weight = self.lm_head.weight
 
@@ -124,17 +119,11 @@ class TransformerDecoder(nn.Module):
         return tokenizer.decode(token_ids=idxs[0])
             
 class GPT2(L.LightningModule):
-    def __init__(self, n_embed: int, n_heads: int, n_layers: int, vocab_size: int, block_size: int, lr: float, t_max: int, dropout: float = 0.2):
+    def __init__(self, config :GPT2Config):
         super().__init__()
-        self.n_embed = n_embed
-        self.n_heads = n_heads
-        self.vocab_size = vocab_size
-        self.block_size = block_size
-        self.dropout = dropout
-        self.n_layers = n_layers
-        self.model = TransformerDecoder(n_embed, n_heads, n_layers, vocab_size, block_size, dropout)
-        self.lr = lr
-        self.t_max = t_max
+        self.model = TransformerDecoder(config)
+        self.lr = config.lr
+        self.t_max = config.t_max
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model(x)
