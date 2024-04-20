@@ -49,8 +49,8 @@ class Head(nn.Module):
 
     def forward(self, x: torch.Tensor, training: bool) -> torch.Tensor:
         B, T, C = x.shape
-        qkv = self.qkv(x).reshape(B, T, 3, self.qkv.out_features // 3).permute(0, 2, 1, 3)
-        q, k, v = qkv[0], qkv[1], qkv[2]
+        qkv = self.qkv(x).reshape(B, T, 3, -1).permute(0, 2, 1, 3)
+        q, k, v = qkv[:, 0], qkv[:, 1], qkv[:, 2]
         out = torch.nn.functional.scaled_dot_product_attention(
             q, k, v, attn_mask=None, dropout_p=self.dropout.p if training else 0.0, is_causal=True
         )
