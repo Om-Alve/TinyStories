@@ -44,7 +44,7 @@ if __name__ == '__main__':
     num_epochs = args.num_epochs
 
     config = GPT2Config(
-        vocab_size = tokenizer.vocab_size,
+        vocab_size = tokenizer.vocab_size + 1,
         block_size = args.block_size,
         lr = args.lr,
         n_embed = args.n_embed,
